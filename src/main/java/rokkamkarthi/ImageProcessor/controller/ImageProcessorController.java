@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 import rokkamkarthi.ImageProcessor.models.ResponseTemplate;
 import rokkamkarthi.ImageProcessor.models.Utils;
 import rokkamkarthi.ImageProcessor.service.ImageProcessorService;
+import rokkamkarthi.ImageProcessor.store.ImageProcessorDataStore;
 
 /**
  * @author rokkamkarthi
@@ -50,16 +52,16 @@ public class ImageProcessorController {
 
 		// save uploaded file as input stream in service
 		try {
-			service.setUploadFile(file);
+			ImageProcessorDataStore.setUploadFile(file);
 		} catch (IOException e) {
 			return new ResponseEntity<ResponseTemplate>(Utils.getErrorResponse("INTERNAL_ERROR", e.getMessage()),
 					HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 
 		// check if file is proper image or not - checks for BMP, GIF, JPG and PNG types
-		boolean isValid = service.validateFileTypes();
+		boolean isValid = ImageProcessorDataStore.validateFileTypes();
 		if (!isValid) {
-			service.clearUploadFile();
+			ImageProcessorDataStore.clearUploadFile();
 			return new ResponseEntity<ResponseTemplate>(Utils.getErrorResponse("INVALID_IMAGE_TYPE",
 					"API supports only BMP, GIF, JPG and PNG Image types."), HttpStatus.BAD_REQUEST);
 		}
@@ -146,6 +148,17 @@ public class ImageProcessorController {
 	public ResponseEntity<ResponseTemplate> downloadImage() {
 		try {
 			ResponseTemplate res = service.downloadImage();
+			return new ResponseEntity<ResponseTemplate>(res, HttpStatus.OK);
+		} catch (IOException e) {
+			return new ResponseEntity<ResponseTemplate>(Utils.getErrorResponse("INTERNAL_ERROR", e.getMessage()),
+					HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+	
+	@DeleteMapping("/deleteImage")
+	public ResponseEntity<ResponseTemplate> deleteImage() {
+		try {
+			ResponseTemplate res = service.deleteImage();
 			return new ResponseEntity<ResponseTemplate>(res, HttpStatus.OK);
 		} catch (IOException e) {
 			return new ResponseEntity<ResponseTemplate>(Utils.getErrorResponse("INTERNAL_ERROR", e.getMessage()),

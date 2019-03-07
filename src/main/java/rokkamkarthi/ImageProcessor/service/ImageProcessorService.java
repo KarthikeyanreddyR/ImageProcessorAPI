@@ -6,18 +6,16 @@ import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 
 import javax.imageio.ImageIO;
 
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import rokkamkarthi.ImageProcessor.models.ResponseTemplate;
 import rokkamkarthi.ImageProcessor.models.Utils;
+import rokkamkarthi.ImageProcessor.store.ImageProcessorDataStore;
 
 /**
  * @author rokkamkarthi
@@ -27,66 +25,15 @@ import rokkamkarthi.ImageProcessor.models.Utils;
 @Service
 public class ImageProcessorService {
 
-	private static byte[] _uploadedImage = null;
-	public static String _imageName = null;
-	public static String _imageType = null;
-	private static byte[] _transformedImage = null;
-
-	public void setUploadFile(MultipartFile file) throws IOException {
-		_uploadedImage = file.getBytes();
-		_imageName = file.getResource().getFilename();
-		_imageType = _imageName.substring(_imageName.lastIndexOf(".") + 1);
-		_transformedImage = null;
-	}
-
-	public void clearUploadFile() {
-		_uploadedImage = null;
-		_imageName = null;
-		_imageType = null;
-		_transformedImage = null;
-	}
-
-	private boolean isFileUploaded() {
-		return _uploadedImage != null;
-	}
-
-	// Supported file types are BMP, GIF, JPG, PNG
-	public boolean validateFileTypes() { // throws some custom exception
-
-		if (!isFileUploaded())
-			return false;
-
-		try {
-			// check for BMP, GIF, JPG and PNG types.
-			ImageIO.read(new ByteArrayInputStream(_uploadedImage)).toString();
-			return true;
-		} catch (Exception e) {
-			return false;
-		}
-	}
-
-	private BufferedImage getBufferedImage() throws IOException {
-		BufferedImage originalImage = null;
-		InputStream in = null;
-		if (_transformedImage == null) {
-			in = new ByteArrayInputStream(_uploadedImage);
-			originalImage = ImageIO.read(in);
-		} else {
-			in = new ByteArrayInputStream(_transformedImage);
-			originalImage = ImageIO.read(in);
-		}
-		return originalImage;
-	}
-
 	public ResponseTemplate landingPage() {
 		return Utils.landingPageResponse();
 	}
 
 	public ResponseTemplate grayscale() throws IOException {
-		if (!isFileUploaded())
+		if (!ImageProcessorDataStore.isFileUploaded())
 			return Utils.getErrorResponse("NO_IMAGE", "Please upload Image..");
 
-		BufferedImage img = getBufferedImage();
+		BufferedImage img = ImageProcessorDataStore.getBufferedImage();
 		// get image width and height
 		int width = img.getWidth();
 		int height = img.getHeight();
@@ -110,19 +57,19 @@ public class ImageProcessorService {
 				img.setRGB(x, y, p);
 			}
 		}
-		
+
 		// Create a byte array output stream.
 		ByteArrayOutputStream bao = new ByteArrayOutputStream();
-		ImageIO.write(img, _imageType, bao);
-		_transformedImage = bao.toByteArray();
+		ImageIO.write(img, ImageProcessorDataStore.getUploadedImageType(), bao);
+		ImageProcessorDataStore.updateTransformedImage(bao.toByteArray());
 		return Utils.transformationSuccessResponse(bao.toByteArray());
 	}
 
 	public ResponseTemplate resize(int width, int height) throws IOException {
-		if (!isFileUploaded())
+		if (!ImageProcessorDataStore.isFileUploaded())
 			return Utils.getErrorResponse("NO_IMAGE", "Please upload Image..");
 
-		BufferedImage inputImage = getBufferedImage();
+		BufferedImage inputImage = ImageProcessorDataStore.getBufferedImage();
 
 		// creates output image
 		BufferedImage outputImage = new BufferedImage(width, height, inputImage.getType());
@@ -135,17 +82,17 @@ public class ImageProcessorService {
 
 		// Create a byte array output stream.
 		ByteArrayOutputStream bao = new ByteArrayOutputStream();
-		ImageIO.write(outputImage, _imageType, bao);
-		_transformedImage = bao.toByteArray();
+		ImageIO.write(outputImage, ImageProcessorDataStore.getUploadedImageType(), bao);
+		ImageProcessorDataStore.updateTransformedImage(bao.toByteArray());
 		return Utils.transformationSuccessResponse(bao.toByteArray());
 
 	}
 
 	public ResponseTemplate thumbnail(int thumbWidth, int thumbHeight) throws IOException {
-		if (!isFileUploaded())
+		if (!ImageProcessorDataStore.isFileUploaded())
 			return Utils.getErrorResponse("NO_IMAGE", "Please upload Image..");
 
-		BufferedImage inputImage = getBufferedImage();
+		BufferedImage inputImage = ImageProcessorDataStore.getBufferedImage();
 
 		// adjust width & height
 		double thumbRatio = (double) thumbWidth / (double) thumbHeight;
@@ -181,16 +128,16 @@ public class ImageProcessorService {
 
 		// Create a byte array output stream.
 		ByteArrayOutputStream bao = new ByteArrayOutputStream();
-		ImageIO.write(thumbImage, _imageType, bao);
-		_transformedImage = bao.toByteArray();
+		ImageIO.write(thumbImage, ImageProcessorDataStore.getUploadedImageType(), bao);
+		ImageProcessorDataStore.updateTransformedImage(bao.toByteArray());
 		return Utils.transformationSuccessResponse(bao.toByteArray());
 	}
 
 	public ResponseTemplate flipHorizontally() throws IOException {
-		if (!isFileUploaded())
+		if (!ImageProcessorDataStore.isFileUploaded())
 			return Utils.getErrorResponse("NO_IMAGE", "Please upload Image..");
 
-		BufferedImage inputImage = getBufferedImage();
+		BufferedImage inputImage = ImageProcessorDataStore.getBufferedImage();
 
 		AffineTransform tx = AffineTransform.getScaleInstance(1.0, -1.0); // scaling
 		tx.translate(0, -inputImage.getHeight()); // translating
@@ -200,16 +147,16 @@ public class ImageProcessorService {
 
 		// Create a byte array output stream.
 		ByteArrayOutputStream bao = new ByteArrayOutputStream();
-		ImageIO.write(outputImage, _imageType, bao);
-		_transformedImage = bao.toByteArray();
+		ImageIO.write(outputImage, ImageProcessorDataStore.getUploadedImageType(), bao);
+		ImageProcessorDataStore.updateTransformedImage(bao.toByteArray());
 		return Utils.transformationSuccessResponse(bao.toByteArray());
 	}
 
 	public ResponseTemplate flipVertically() throws IOException {
-		if (!isFileUploaded())
+		if (!ImageProcessorDataStore.isFileUploaded())
 			return Utils.getErrorResponse("NO_IMAGE", "Please upload Image..");
 
-		BufferedImage inputImage = getBufferedImage();
+		BufferedImage inputImage = ImageProcessorDataStore.getBufferedImage();
 
 		AffineTransform tx = AffineTransform.getScaleInstance(-1.0, 1.0); // scaling
 		tx.translate(-inputImage.getWidth(), 0); // translating
@@ -219,16 +166,16 @@ public class ImageProcessorService {
 
 		// Create a byte array output stream.
 		ByteArrayOutputStream bao = new ByteArrayOutputStream();
-		ImageIO.write(outputImage, _imageType, bao);
-		_transformedImage = bao.toByteArray();
+		ImageIO.write(outputImage, ImageProcessorDataStore.getUploadedImageType(), bao);
+		ImageProcessorDataStore.updateTransformedImage(bao.toByteArray());
 		return Utils.transformationSuccessResponse(bao.toByteArray());
 	}
 
 	public ResponseTemplate rotate(int degree) throws IOException {
-		if (!isFileUploaded())
+		if (!ImageProcessorDataStore.isFileUploaded())
 			return Utils.getErrorResponse("NO_IMAGE", "Please upload Image..");
 
-		BufferedImage inputImage = getBufferedImage();
+		BufferedImage inputImage = ImageProcessorDataStore.getBufferedImage();
 
 		double rads = Math.toRadians(degree);
 		double sin = Math.abs(Math.sin(rads)), cos = Math.abs(Math.cos(rads));
@@ -250,20 +197,28 @@ public class ImageProcessorService {
 
 		// Create a byte array output stream.
 		ByteArrayOutputStream bao = new ByteArrayOutputStream();
-		ImageIO.write(rotated, _imageType, bao);
-		_transformedImage = bao.toByteArray();
+		ImageIO.write(rotated, ImageProcessorDataStore.getUploadedImageType(), bao);
+		ImageProcessorDataStore.updateTransformedImage(bao.toByteArray());
 		return Utils.transformationSuccessResponse(bao.toByteArray());
 	}
 
 	public ResponseTemplate downloadImage() throws IOException {
-		if (!isFileUploaded())
+		if (!ImageProcessorDataStore.isFileUploaded())
 			return Utils.getErrorResponse("NO_IMAGE", "Please upload Image..");
 
-		BufferedImage img = getBufferedImage();
+		BufferedImage img = ImageProcessorDataStore.getBufferedImage();
 
 		// Create a byte array output stream.
 		ByteArrayOutputStream bao = new ByteArrayOutputStream();
-		ImageIO.write(img, _imageType, bao);
+		ImageIO.write(img, ImageProcessorDataStore.getUploadedImageType(), bao);
 		return Utils.transformationSuccessResponse(bao.toByteArray());
+	}
+	
+	public ResponseTemplate deleteImage() throws IOException {
+		if (!ImageProcessorDataStore.isFileUploaded())
+			return Utils.getErrorResponse("NO_IMAGE", "Please upload Image..");
+		// delete uploaded image
+		ImageProcessorDataStore.clearUploadFile();
+		return Utils.landingPageResponse();
 	}
 }
