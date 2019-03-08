@@ -66,11 +66,11 @@
 		</dependency>
 		<!-- ImageJ is an open source Java image processing program inspired by 
 			NIH Image for the Macintosh. -->
-		<dependency>
+		<!-- <dependency>
 			<groupId>net.imagej</groupId>
 			<artifactId>ij</artifactId>
 			<version>1.52k</version>
-		</dependency>
+		</dependency> -->
 		<!-- <dependency>
 			<groupId>javaxt</groupId>
 			<artifactId>javaxt-core</artifactId>
