@@ -1,10 +1,13 @@
 package rokkamkarthi.ImageProcessor.models;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 
-import rokkamkarthi.ImageProcessor.store.ImageProcessorDataStore;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * @author rokkamkarthi
@@ -14,6 +17,45 @@ public class Utils {
 
 	// boolean res = ImageIO.write(img, _fileType, new
 	// File("C:\\Users\\rkkr9\\grayscale." + _fileType));
+
+	/*
+	 * ImageIO.write(rotated, ImageProcessorDataStore.getUploadedImageType(), new
+	 * File("C:\\Users\\rkkr9\\Desktop\\test\\rotate_" +
+	 * LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH_mm_ss")
+	 * ) + "." + ImageProcessorDataStore.getUploadedImageType()));
+	 */
+
+	// reading individual pixels and modifying them
+	/*
+	 * for (int y = 0; y < height; y++) { for (int x = 0; x < width; x++) { int p =
+	 * img.getRGB(x, y);
+	 * 
+	 * int a = (p >> 24) & 0xff; int r = (p >> 16) & 0xff; int g = (p >> 8) & 0xff;
+	 * int b = p & 0xff;
+	 * 
+	 * // calculate average int avg = (r + g + b) / 3;
+	 * 
+	 * // replace RGB value with avg p = (a << 24) | (avg << 16) | (avg << 8) | avg;
+	 * 
+	 * img.setRGB(x, y, p); } }
+	 */
+
+	public static final int thumbnailWidth = 100;
+	public static final int thumbnailHeight = 100;
+
+	// Top req obj
+	public static final String Req_Image = "image_string";
+	public static final String Req_Transformations = "transformations";
+
+	// transformation obj
+	public static final String Transform_Type = "transform_type";
+	public static final String Req_Parameters = "options";
+
+	// params obj
+	public static final String Params_Width = "width";
+	public static final String Params_Height = "height";
+	public static final String Params_Degree = "degrees";
+	public static final String Params_Ori = "orientation";
 
 	/**
 	 * Creates error {@link ResponseTemplate} for given error, message.
@@ -43,20 +85,7 @@ public class Utils {
 		responseTemplate.setData(responseData);
 		responseTemplate.setStatus(200);
 		responseTemplate.addActions(getActions());
-		return responseTemplate;
-	}
-
-	/**
-	 * Returns {@link ResponseTemplate} for successful image upload.
-	 * 
-	 * @return {@link ResponseTemplate}
-	 */
-	public static ResponseTemplate uploadSuccessResponse() {
-		ResponseTemplate responseTemplate = new ResponseTemplate();
-		ResponseData responseData = new ResponseData("File uploaded successfully!!!.", null);
-		responseTemplate.setData(responseData);
-		responseTemplate.setStatus(200);
-		responseTemplate.addActions(getActions());
+		responseTemplate.setModel(getReqObj());
 		return responseTemplate;
 	}
 
@@ -73,6 +102,7 @@ public class Utils {
 		responseTemplate.setData(responseData);
 		responseTemplate.setStatus(200);
 		responseTemplate.addActions(getActions());
+		responseTemplate.setModel(getReqObj());
 		return responseTemplate;
 	}
 
@@ -88,34 +118,120 @@ public class Utils {
 	}
 
 	/**
-	 * Return List of {@link Action} based on Image processor state {@link ImageStates}
+	 * Return List of {@link Action} based on Image processor state
+	 * {@link ImageStates}
+	 * 
 	 * @return ArrayList of actions
 	 */
 	public static List<Action> getActions() {
 		List<Action> actions = new ArrayList<Action>();
-		
-		switch (ImageProcessorDataStore.states) {
-		case IMAGE_ABSENT:
-			actions.add(new Action("/uploadImage", "POST", "Upload an Image."));
-			break;
-		case IMAGE_PRESENT:
-			actions.add(new Action("/uploadImage", "POST", "Upload an Image."));
-			actions.add(new Action("/transform/grayscale", "POST", "Grayscale image."));
-			actions.add(
-					new Action("/transform/resize", "POST", "Resize image according to provided width and height."));
-			actions.add(new Action("/transform/thumbnail", "POST",
-					"Generate thumbnail according to provided width and height."));
-			actions.add(new Action("/transform/flip/horizontal", "POST", "Flip image horizontally along x-axis."));
-			actions.add(new Action("/transform/flip/vertical", "POST", "Flip image vertically along y-axis."));
-			actions.add(new Action("/transform/rotate", "POST", "Rotate image based on provided degrees."));
-			actions.add(new Action("/downloadImage", "GET", "Download transormed image."));
-			actions.add(new Action("/deleteImage", "DELETE", "Delete uploaded image."));
-			break;
-		default:
-			actions.add(new Action("/uploadImage", "POST", "Upload an Image."));
-			break;
-		}
-
+		actions.add(new Action("/transform", "POST",
+				"Apply image transformations. check model for sample request objects."));
 		return actions;
+	}
+
+	public static boolean validateRequestData(ReqTransform inputData) {
+		if (inputData == null)
+			return false;
+		if (inputData.getImageAsBase64String().isEmpty())
+			return false;
+		if (inputData.getImageAsBase64String().trim().isEmpty())
+			return false;
+		if (inputData.getTransformations() == null)
+			return false;
+		if (inputData.getTransformations().isEmpty())
+			return false;
+
+		return true;
+	}
+
+	public static List<Orientation> getOrientationEnumValues() {
+		return new ArrayList<Orientation>(Arrays.asList(Orientation.values()));
+	}
+
+	public static List<TransformType> getTransformTypeEnumValues() {
+		return new ArrayList<TransformType>(Arrays.asList(TransformType.values()));
+	}
+
+	public static ObjectNode getReqObj() {
+		ObjectMapper mapper = new ObjectMapper();
+		ObjectNode json = mapper.createObjectNode();
+		json.put(Req_Image, "image as base64 encoded string");
+		ArrayNode arr = mapper.createArrayNode();
+		for (TransformType type : getTransformTypeEnumValues()) {
+			switch (type) {
+			case GRAYSCALE:
+				arr.add(grayscale(mapper));
+				break;
+			case FLIP:
+				arr.add(flip(mapper, Orientation.HORIZONTAL));
+				arr.add(flip(mapper, Orientation.VERTICAL));
+				break;
+			case ROTATE:
+				arr.add(rotate(mapper));
+				arr.add(rotate(mapper, Orientation.LEFT));
+				arr.add(rotate(mapper, Orientation.RIGHT));
+				break;
+			case THUMBNAIL:
+				arr.add(thumbnail(mapper));
+				break;
+			case RESIZE:
+				arr.add(resize(mapper));
+				break;
+			default:
+				break;
+			}
+		}
+		json.putPOJO(Req_Transformations, arr);
+		return json;
+	}
+
+	public static ObjectNode grayscale(ObjectMapper mapper) {
+		ObjectNode json = mapper.createObjectNode();
+		json.put(Transform_Type, TransformType.GRAYSCALE.name());
+		return json;
+	}
+
+	public static ObjectNode thumbnail(ObjectMapper mapper) {
+		ObjectNode json = mapper.createObjectNode();
+		json.put(Transform_Type, TransformType.THUMBNAIL.name());
+		return json;
+	}
+
+	public static ObjectNode resize(ObjectMapper mapper) {
+		ObjectNode json = mapper.createObjectNode();
+		json.put(Transform_Type, TransformType.RESIZE.name());
+		ObjectNode json1 = mapper.createObjectNode();
+		json1.put(Params_Width, 0);
+		json1.put(Params_Height, 0);
+		json.putPOJO(Req_Parameters, json1);
+		return json;
+	}
+
+	public static ObjectNode rotate(ObjectMapper mapper) {
+		ObjectNode json = mapper.createObjectNode();
+		json.put(Transform_Type, TransformType.ROTATE.name());
+		ObjectNode json1 = mapper.createObjectNode();
+		json1.put(Params_Degree, 0);
+		json.putPOJO(Req_Parameters, json1);
+		return json;
+	}
+
+	public static ObjectNode rotate(ObjectMapper mapper, Orientation orientation) {
+		ObjectNode json = mapper.createObjectNode();
+		json.put(Transform_Type, TransformType.ROTATE.name());
+		ObjectNode json1 = mapper.createObjectNode();
+		json1.put(Params_Ori, orientation.name());
+		json.putPOJO(Req_Parameters, json1);
+		return json;
+	}
+
+	public static ObjectNode flip(ObjectMapper mapper, Orientation orientation) {
+		ObjectNode json = mapper.createObjectNode();
+		json.put(Transform_Type, TransformType.FLIP.name());
+		ObjectNode json1 = mapper.createObjectNode();
+		json1.put(Params_Ori, orientation.name());
+		json.putPOJO(Req_Parameters, json1);
+		return json;
 	}
 }

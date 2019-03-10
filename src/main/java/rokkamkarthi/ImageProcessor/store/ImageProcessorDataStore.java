@@ -7,37 +7,37 @@ import java.io.InputStream;
 
 import javax.imageio.ImageIO;
 
-import org.springframework.web.multipart.MultipartFile;
-
-import rokkamkarthi.ImageProcessor.models.ImageStates;
-
 public class ImageProcessorDataStore {
 
 	private static byte[] _uploadedImage = null;
-	private static String _imageName = null;
-	private static String _imageType = null;
+	private static String _imageName = "newImage.png";
+	private static String _imageType = "png";
 	private static byte[] _transformedImage = null;
-	
-	public static ImageStates states = ImageStates.IMAGE_ABSENT;
 
-	public static void setUploadFile(MultipartFile file) throws IOException {
-		_uploadedImage = file.getBytes();
-		_imageName = file.getResource().getFilename();
-		_imageType = _imageName.substring(_imageName.lastIndexOf(".") + 1);
-		_transformedImage = null;
-		states = ImageStates.IMAGE_PRESENT;
+	public static void uploadImage(byte[] bytes) {
+		_uploadedImage = bytes;
+		_transformedImage = bytes;
 	}
 
-	public static void clearUploadFile() {
+	public static void clearImage() {
 		_uploadedImage = null;
-		_imageName = null;
-		_imageType = null;
 		_transformedImage = null;
-		states = ImageStates.IMAGE_ABSENT;
 	}
 
 	public static boolean isFileUploaded() {
 		return _uploadedImage != null;
+	}
+
+	public static void updateTransformedImage(byte[] newImageByteArray) {
+		_transformedImage = newImageByteArray;
+	}
+
+	public static byte[] getTransformedImage() {
+		return _transformedImage;
+	}
+
+	public static String getUploadedImageType() {
+		return _imageType;
 	}
 
 	public static BufferedImage getBufferedImage() throws IOException {
@@ -52,14 +52,6 @@ public class ImageProcessorDataStore {
 		}
 		return originalImage;
 	}
-	
-	public static void updateTransformedImage(byte[] newImageByteArray) {
-		_transformedImage = newImageByteArray;
-	}
-	
-	public static String getUploadedImageType() {
-		return _imageType;
-	}
 
 	// Supported file types are BMP, GIF, JPG, PNG
 	public static boolean validateFileTypes() { // throws some custom exception
@@ -72,7 +64,6 @@ public class ImageProcessorDataStore {
 			ImageIO.read(new ByteArrayInputStream(_uploadedImage)).toString();
 			return true;
 		} catch (Exception e) {
-			states = ImageStates.IMAGE_ABSENT;
 			return false;
 		}
 	}

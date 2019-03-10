@@ -14,12 +14,8 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<name>ImageProcessor</name>
 	<description>Simple Image Processor</description>
-	<!-- <repositories>
-		<repository>
-			<id>javaxt.com</id>
-			<url>http://www.javaxt.com/maven</url>
-		</repository>
-	</repositories> -->
+	<!-- <repositories> <repository> <id>javaxt.com</id> <url>http://www.javaxt.com/maven</url> 
+		</repository> </repositories> -->
 	<properties>
 		<java.version>1.8</java.version>
 		<swagger.version>2.9.2</swagger.version>
@@ -30,8 +26,6 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
-		<!-- <dependency> <groupId>org.springframework.boot</groupId> <artifactId>spring-boot-starter-data-jpa</artifactId> 
-			</dependency> -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
@@ -64,26 +58,6 @@
 			<artifactId>springfox-swagger-ui</artifactId>
 			<version>${swagger.version}</version>
 		</dependency>
-		<!-- ImageJ is an open source Java image processing program inspired by 
-			NIH Image for the Macintosh. -->
-		<!-- <dependency>
-			<groupId>net.imagej</groupId>
-			<artifactId>ij</artifactId>
-			<version>1.52k</version>
-		</dependency> -->
-		<!-- <dependency>
-			<groupId>javaxt</groupId>
-			<artifactId>javaxt-core</artifactId>
-			<version>1.9.0</version>
-		</dependency> -->
-
-		<!-- jMimeMagic is a Java library for determining the content type of files 
-			or streams. -->
-		<!-- <dependency>
-			<groupId>net.sf.jmimemagic</groupId>
-			<artifactId>jmimemagic</artifactId>
-			<version>0.1.5</version>
-		</dependency> -->
 	</dependencies>
 
 	<build>
