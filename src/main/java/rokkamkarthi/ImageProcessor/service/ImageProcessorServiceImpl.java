@@ -28,7 +28,7 @@ public class ImageProcessorServiceImpl implements ImageProcessorService {
 	public ResponseTemplate transform(ReqTransform inputData) {
 		// check if image string is empty
 		if (!Utils.validateRequestData(inputData))
-			return Utils.getErrorResponse("MISSING_DATE", "Please upload required data.");
+			return Utils.getErrorResponse("MISSING_DATA", "Please upload required data.");
 
 		String[] splits = inputData.getImageAsBase64String().split(",");
 		if (splits.length == 0)
@@ -53,7 +53,7 @@ public class ImageProcessorServiceImpl implements ImageProcessorService {
 
 		// validate if provided base64 string is image or not
 		boolean isValid = ImageProcessorDataStore.validateFileTypes();
-		if(!isValid) {
+		if (!isValid) {
 			ImageProcessorDataStore.clearImage();
 			return Utils.getErrorResponse("INVALID_IMAGE", "Please upload valid image.");
 		}
@@ -67,7 +67,8 @@ public class ImageProcessorServiceImpl implements ImageProcessorService {
 				try {
 					grayscale();
 				} catch (IOException e) {
-					e.printStackTrace();
+					// Log error msg for debugging
+					System.err.println(e.getMessage());
 				}
 				break;
 			case FLIP:
@@ -82,7 +83,8 @@ public class ImageProcessorServiceImpl implements ImageProcessorService {
 							flipVertically();
 					}
 				} catch (IOException e) {
-					e.printStackTrace();
+					// Log error msg for debugging
+					System.err.println(e.getMessage());
 				}
 
 				break;
@@ -94,7 +96,7 @@ public class ImageProcessorServiceImpl implements ImageProcessorService {
 				// else call rotate with orientation
 				// else call rotate fun with degree
 				try {
-					if (params.getDegrees() != 1000) {
+					if (params.getDegrees() != 1000 && (params.getDegrees() >= -360 && params.getDegrees() <= 360)) {
 						rotate(params.getDegrees());
 					} else {
 						Orientation type = params.getOrientation();
@@ -107,21 +109,21 @@ public class ImageProcessorServiceImpl implements ImageProcessorService {
 					}
 
 				} catch (IOException e) {
-					e.printStackTrace();
+					// Log error msg for debugging
+					System.err.println(e.getMessage());
 				}
 				break;
 			case RESIZE:
 				// check for width and height
 				// if no data - skip transformation
 				// else call resize function
-				System.out.println(params.getWidth());
-				System.out.println(params.getHeight());
 				try {
 					if (params.getWidth() != -1 && params.getHeight() != -1) {
 						resize(params.getWidth(), params.getHeight());
 					}
 				} catch (IOException e) {
-					e.printStackTrace();
+					// Log error msg for debugging
+					System.err.println(e.getMessage());
 				}
 
 				break;
@@ -130,7 +132,8 @@ public class ImageProcessorServiceImpl implements ImageProcessorService {
 				try {
 					thumbnail();
 				} catch (IOException e) {
-					e.printStackTrace();
+					// Log error msg for debugging
+					System.err.println(e.getMessage());
 				}
 				break;
 			default:
@@ -141,7 +144,14 @@ public class ImageProcessorServiceImpl implements ImageProcessorService {
 
 		// fetch transformed image
 		byte[] outputImage = ImageProcessorDataStore.getTransformedImage();
-		return Utils.transformationSuccessResponse(outputImage);
+		
+		// generate output
+		ResponseTemplate res = Utils.transformationSuccessResponse(outputImage);
+		
+		// clear images - images are not stored anywhere after transformations
+		ImageProcessorDataStore.clearImage();
+		
+		return res;
 	}
 
 	private void grayscale() throws IOException {
@@ -183,7 +193,7 @@ public class ImageProcessorServiceImpl implements ImageProcessorService {
 		g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-		//g2d.drawRenderedImage(inputImage, null);
+		// draw image
 		g2d.drawImage(inputImage, 0, 0, width, height, null);
 		g2d.dispose();
 
@@ -198,47 +208,28 @@ public class ImageProcessorServiceImpl implements ImageProcessorService {
 
 		BufferedImage inputImage = ImageProcessorDataStore.getBufferedImage();
 
-		int imageWidth = inputImage.getWidth();
-		int imageHeight = inputImage.getHeight();
-		
-		System.out.println(imageWidth + "::::" + imageHeight);
+		int original_width = inputImage.getWidth();
+		int original_height = inputImage.getHeight();
 
-		int thumbnailWidth = Utils.thumbnailWidth, thumbnailHeight = Utils.thumbnailHeight;
+		int bound_width = Utils.thumbnailWidth, bound_height = Utils.thumbnailHeight;
+		int new_width = original_width;
+		int new_height = original_height;
 
-		// if image width and height is less than default thumbnail width and height
-		if (imageWidth < thumbnailWidth && imageHeight < thumbnailHeight) {
-			thumbnailWidth = imageWidth;
-			thumbnailHeight = imageHeight;
-		} else if (imageWidth < thumbnailWidth)
-			thumbnailWidth = imageWidth;
-		else if (imageHeight < thumbnailHeight)
-			thumbnailHeight = imageHeight;
-		
-		int original_width = imageWidth;
-	    int original_height = imageHeight;
-	    int bound_width = thumbnailWidth;
-	    int bound_height = thumbnailHeight;
-	    int new_width = original_width;
-	    int new_height = original_height;
+		// first check if we need to scale width
+		if (original_width > bound_width) {
+			// scale width to fit
+			new_width = bound_width;
+			// scale height to maintain aspect ratio
+			new_height = (new_width * original_height) / original_width;
+		}
 
-	    // first check if we need to scale width
-	    if (original_width > bound_width) {
-	        //scale width to fit
-	        new_width = bound_width;
-	        //scale height to maintain aspect ratio
-	        new_height = (new_width * original_height) / original_width;
-	    }
-
-	    // then check if we need to scale even with the new height
-	    if (new_height > bound_height) {
-	        //scale height to fit instead
-	        new_height = bound_height;
-	        //scale width to maintain aspect ratio
-	        new_width = (new_height * original_width) / original_height;
-	    }
-		
-		System.out.println(thumbnailWidth + "::::" + thumbnailHeight);
-		System.out.println(new_width + "::::" + new_height);
+		// then check if we need to scale even with the new height
+		if (new_height > bound_height) {
+			// scale height to fit instead
+			new_height = bound_height;
+			// scale width to maintain aspect ratio
+			new_width = (new_height * original_width) / original_height;
+		}
 
 		resize(new_width, new_height);
 

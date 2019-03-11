@@ -4,13 +4,13 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLConnection;
 
 import javax.imageio.ImageIO;
 
 public class ImageProcessorDataStore {
 
 	private static byte[] _uploadedImage = null;
-	private static String _imageName = "newImage.png";
 	private static String _imageType = "png";
 	private static byte[] _transformedImage = null;
 
@@ -61,7 +61,12 @@ public class ImageProcessorDataStore {
 
 		try {
 			// check for BMP, GIF, JPG and PNG types.
-			ImageIO.read(new ByteArrayInputStream(_uploadedImage)).toString();
+			ByteArrayInputStream bis = new ByteArrayInputStream(_uploadedImage);
+			ImageIO.read(bis).toString();
+			String contentType = URLConnection.guessContentTypeFromStream(bis);
+			if (contentType != null) {
+				_imageType = contentType.substring(contentType.lastIndexOf("/") + 1);
+			}
 			return true;
 		} catch (Exception e) {
 			return false;

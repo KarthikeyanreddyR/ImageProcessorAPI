@@ -1,6 +1,6 @@
 package rokkamkarthi.ImageProcessor.models;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
 public class ErrorResponse {
@@ -11,7 +11,7 @@ public class ErrorResponse {
 	public ErrorResponse(String error, String message) {
 		this.error = error;
 		this.message = message;
-		this.timestamp = LocalDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+		this.timestamp = ZonedDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
 	}
 
 	public String getError() {
