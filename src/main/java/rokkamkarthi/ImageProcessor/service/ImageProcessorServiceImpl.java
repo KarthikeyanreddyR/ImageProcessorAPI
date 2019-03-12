@@ -144,38 +144,39 @@ public class ImageProcessorServiceImpl implements ImageProcessorService {
 
 		// fetch transformed image
 		byte[] outputImage = ImageProcessorDataStore.getTransformedImage();
-		
+
 		// generate output
 		ResponseTemplate res = Utils.transformationSuccessResponse(outputImage);
-		
+
 		// clear images - images are not stored anywhere after transformations
 		ImageProcessorDataStore.clearImage();
-		
+
 		return res;
 	}
 
 	private void grayscale() throws IOException {
 		BufferedImage img = ImageProcessorDataStore.getBufferedImage();
+		
 		// get image width and height
 		int width = img.getWidth();
 		int height = img.getHeight();
 
-		// convert to grayscale
-		BufferedImage outputImage = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
-		Graphics2D g2d = outputImage.createGraphics();
-
-		// Maintain Image Quality
-		g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-		g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-		// draw image
-		g2d.drawRenderedImage(img, null);
-		g2d.dispose();
+		for (int x = 0; x < width; x++) {
+			for (int y = 0; y < height; y++) {
+				int p = img.getRGB(x, y);
+				int a = (p >> 24) & 0xff;
+				int r = (p >> 16) & 0xff;
+				int g = (p >> 8) & 0xff;
+				int b = p & 0xff;
+				int avg = (r + g + b) / 3;
+				p = (a << 24) | (avg << 16) | (avg << 8) | avg;
+				img.setRGB(x, y, p);
+			}
+		}
 
 		// Create a byte array output stream.
 		ByteArrayOutputStream bao = new ByteArrayOutputStream();
-		ImageIO.write(outputImage, ImageProcessorDataStore.getUploadedImageType(), bao);
+		ImageIO.write(img, ImageProcessorDataStore.getUploadedImageType(), bao);
 		ImageProcessorDataStore.updateTransformedImage(bao.toByteArray());
 	}
 

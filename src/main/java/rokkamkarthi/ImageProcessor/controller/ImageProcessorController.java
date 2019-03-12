@@ -23,7 +23,7 @@ import rokkamkarthi.ImageProcessor.service.ImageProcessorServiceImpl;
 @RestController
 @RequestMapping("/api")
 public class ImageProcessorController {
-	
+
 	@Autowired
 	private ImageProcessorServiceImpl service;
 
@@ -35,7 +35,21 @@ public class ImageProcessorController {
 
 	@RequestMapping(path = "/transform", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_UTF8_VALUE, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
 	public ResponseEntity<ResponseTemplate> applyTransformations(@RequestBody ReqTransform reqTransform) {
+		System.out.println(reqTransform.toString());
 		ResponseTemplate res = service.transform(reqTransform);
 		return new ResponseEntity<ResponseTemplate>(res, HttpStatus.valueOf(res.getStatus()));
 	}
+
+	/*
+	 * @GetMapping("/download") public ResponseEntity<ByteArrayResource>
+	 * downloadImage() { byte[] data =
+	 * ImageProcessorDataStore.getTransformedImage(); ByteArrayResource res = new
+	 * ByteArrayResource(data); return
+	 * ResponseEntity.ok().contentType(MediaType.APPLICATION_OCTET_STREAM).
+	 * contentLength(data.length) .header(HttpHeaders.CONTENT_DISPOSITION,
+	 * "attachment;filename=new_image." +
+	 * ImageProcessorDataStore.getUploadedImageType()) .body(res);
+	 * 
+	 * }
+	 */
 }

@@ -27,4 +27,23 @@ public class ReqTransform {
 		this.transformations = transformations;
 	}
 
+	@Override
+	public String toString() {
+		StringBuilder s = new StringBuilder();
+		s.append(imageAsBase64String.length()).append("\n")
+		.append(transformations.size()).append("\n");
+		for(Transformation t : transformations) {
+			s.append(t.getTransformType()).append("\n");
+			if(t.getParameters() != null) {
+				s.append("Degree: ").append(t.getParameters().getDegrees()).append("\n");
+				s.append("Width: ").append(t.getParameters().getWidth()).append("\n");
+				s.append("Height: ").append(t.getParameters().getHeight()).append("\n");
+				s.append("Orientation: ").append(t.getParameters().getOrientation()).append("\n");
+			}
+		}
+		return s.toString();
+	}
+	
+	
+
 }

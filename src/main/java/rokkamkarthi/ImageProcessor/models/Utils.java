@@ -25,21 +25,6 @@ public class Utils {
 	 * ) + "." + ImageProcessorDataStore.getUploadedImageType()));
 	 */
 
-	// reading individual pixels and modifying them
-	/*
-	 * for (int y = 0; y < height; y++) { for (int x = 0; x < width; x++) { int p =
-	 * img.getRGB(x, y);
-	 * 
-	 * int a = (p >> 24) & 0xff; int r = (p >> 16) & 0xff; int g = (p >> 8) & 0xff;
-	 * int b = p & 0xff;
-	 * 
-	 * // calculate average int avg = (r + g + b) / 3;
-	 * 
-	 * // replace RGB value with avg p = (a << 24) | (avg << 16) | (avg << 8) | avg;
-	 * 
-	 * img.setRGB(x, y, p); } }
-	 */
-
 	public static final int thumbnailWidth = 100;
 	public static final int thumbnailHeight = 100;
 
@@ -116,7 +101,7 @@ public class Utils {
 		byte[] encodedBytes = Base64.getEncoder().withoutPadding().encode(data);
 		return new String(encodedBytes);
 	}
-
+	
 	/**
 	 * Return List of {@link Action} based on Image processor state
 	 * {@link ImageStates}
