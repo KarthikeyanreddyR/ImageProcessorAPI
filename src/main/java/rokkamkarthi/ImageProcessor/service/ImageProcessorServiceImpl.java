@@ -28,11 +28,11 @@ public class ImageProcessorServiceImpl implements ImageProcessorService {
 	public ResponseTemplate transform(ReqTransform inputData) {
 		// check if image string is empty
 		if (!Utils.validateRequestData(inputData))
-			return Utils.getErrorResponse("MISSING_DATA", "Please upload required data.");
+			return Utils.getErrorResponse("MISSING_DATA", "Missing image or filters.");
 
 		String[] splits = inputData.getImageAsBase64String().split(",");
 		if (splits.length == 0)
-			return Utils.getErrorResponse("NO_IMAGE", "Please upload Image.");
+			return Utils.getErrorResponse("NO_IMAGE", "Invalid image string.");
 
 		String base64String = "";
 		if (splits.length == 1) {
